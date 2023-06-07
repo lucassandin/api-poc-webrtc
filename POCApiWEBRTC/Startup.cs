@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
+using POCApiWEBRTC.Infra;
 
 namespace POCApiWEBRTC;
 
@@ -15,6 +15,12 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container
     public void ConfigureServices(IServiceCollection services)
     {
+        #region config
+
+        services.AddDatabaseConfig(Configuration);
+
+        #endregion config
+
         services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
         services.AddSingleton(Configuration);
@@ -60,7 +66,7 @@ public class Startup
 
         app.UseRouting();
 
-        app.UseCors(x => 
+        app.UseCors(x =>
             x.AllowAnyHeader()
               .AllowAnyMethod()
               .WithOrigins("http://localhost:3000",
@@ -73,6 +79,16 @@ public class Startup
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        #region configMigration
+
+        using (var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+        {
+            var context = scope.ServiceProvider.GetService<ApplicationDbContext>();
+            context.Database.EnsureCreated();
+        }
+
+        #endregion configMigration
 
         app.UseEndpoints(endpoints =>
         {

@@ -1,5 +1,7 @@
+using AutoFixture;
 using Microsoft.AspNetCore.Mvc;
 using OpenTokSDK;
+using POCApiWEBRTC.Infra;
 using POCApiWEBRTC.Models;
 using System.Net;
 
@@ -9,6 +11,35 @@ namespace POCApiWEBRTC.Controllers;
 [Route("api/[controller]")]
 public class SessionController : ControllerBase
 {
+    private readonly ApplicationDbContext _contexto;
+
+    private readonly Fixture _fixture;
+
+    public SessionController(ApplicationDbContext contexto)
+    {
+        _contexto = contexto;
+        _fixture = new Fixture();
+    }
+
+    [HttpPost]
+    [Route("/session/create")]
+    public async Task<IActionResult> PostSessionPublisher()
+    {
+        try
+        {
+            var testes = _fixture.Create<SessionModel>();
+
+            _contexto.Add(testes);
+            _contexto.SaveChanges();
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex);
+        }
+    }
+
     [HttpGet]
     [Route("/session/create/publisher")]
     public async Task<IActionResult> GetSessionPublisher([FromServices] IConfiguration configuration)
@@ -43,8 +74,7 @@ public class SessionController : ControllerBase
         }
     }
 
-
-    SessionModel CreateSession(int apikey, string secret, MediaMode mediaMode, ArchiveMode archiveMode, Role papel, string sessionId = "")
+    private SessionModel CreateSession(int apikey, string secret, MediaMode mediaMode, ArchiveMode archiveMode, Role papel, string sessionId = "")
     {
         ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
